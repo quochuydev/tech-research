@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Blog</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+</head>
+<body>
+  <div class="site-wrapper">
+    <header class="site-header">
+      <div class="container">
+        <h1 class="site-title"><a href="./" id="site-title-link">My Blog</a></h1>
+        <p class="site-description" id="site-description">A collection of articles</p>
+      </div>
+    </header>
+
+    <nav class="main-nav">
+      <div class="container">
+        <button class="nav-toggle" aria-label="Toggle navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <ul class="nav-menu">
+          <li><a href="./" class="nav-home">Home</a></li>
+          <li class="search-container">
+            <input type="text" id="search-input" placeholder="Search posts...">
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <main class="site-main">
+      <div class="container">
+        <div class="content-wrapper">
+          <article id="post-list" class="post-list"></article>
+          <article id="post-content" class="post-content" style="display: none;"></article>
+
+          <aside class="sidebar">
+            <div class="widget">
+              <h3 class="widget-title">Recent Posts</h3>
+              <ul id="recent-posts" class="recent-posts"></ul>
+            </div>
+            <div class="widget">
+              <h3 class="widget-title">Categories</h3>
+              <ul id="categories" class="category-list"></ul>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p id="footer-text">&copy; 2025 My Blog. Built with Markdown.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script type="module">
+    // ========================================
+    // SITE CONFIGURATION - Edit these values
+    // ========================================
+    const SITE = {
+      title: 'My Blog',
+      description: 'A collection of articles'
+    };
+
+    // Apply site config to DOM
+    document.title = SITE.title;
+    document.getElementById('site-title-link').textContent = SITE.title;
+    document.getElementById('site-description').textContent = SITE.description;
+    document.getElementById('footer-text').innerHTML = `&copy; ${new Date().getFullYear()} ${SITE.title}. Built with Markdown.`;
+
+    // ========================================
+    // AUTO-CONFIGURATION - No need to edit
+    // ========================================
+    const CONFIG = {
+      manifestFile: 'manifest.json',
+      github: null // Will be auto-detected
+    };
+
+    // Auto-detect GitHub repo from URL (works on GitHub Pages)
+    function detectGitHubRepo() {
+      const hostname = window.location.hostname;
+      const pathname = window.location.pathname;
+
+      // GitHub Pages: username.github.io/repo/path/
+      if (hostname.endsWith('.github.io')) {
+        const owner = hostname.replace('.github.io', '');
+        const pathParts = pathname.split('/').filter(Boolean);
+        const repo = pathParts[0] || owner; // repo name or same as owner for user pages
+        const path = pathParts.slice(1, -1).join('/') || pathParts.slice(1).join('/'); // Remove index.html if present
+
+        return {
+          owner,
+          repo,
+          branch: 'master', // Default, could also try 'main'
+          path: path || '.'
+        };
+      }
+      return null;
+    }
+
+    CONFIG.github = detectGitHubRepo();
+
+    // State
+    let posts = [];
+    let currentPost = null;
+
+    // Initialize marked with custom renderer for mermaid and syntax highlighting
+    marked.use({
+      renderer: {
+        code(code, language) {
+          // Handle mermaid blocks - render as div for mermaid.js
+          if (language === 'mermaid') {
+            return `<div class="mermaid">${code}</div>`;
+          }
+          // Syntax highlight other code blocks
+          let highlighted;
+          if (language && hljs.getLanguage(language)) {
+            highlighted = hljs.highlight(code, { language }).value;
+          } else {
+            highlighted = hljs.highlightAuto(code).value;
+          }
+          return `<pre><code class="hljs language-${language || ''}">${highlighted}</code></pre>`;
+        }
+      },
+      gfm: true,
+      breaks: true
+    });
+
+    // Fetch posts list from GitHub API or manifest
+    async function fetchPostsList() {
+      // Try GitHub API first (only if on GitHub Pages)
+      if (CONFIG.github) {
+        try {
+          const apiUrl = `https://api.github.com/repos/${CONFIG.github.owner}/${CONFIG.github.repo}/contents/${CONFIG.github.path}?ref=${CONFIG.github.branch}`;
+          const response = await fetch(apiUrl);
+
+          if (response.ok) {
+            const files = await response.json();
+            return files
+              .filter(file => file.name.endsWith('.md') && file.name !== 'README.md')
+              .map(file => ({
+                name: file.name,
+                path: file.name,
+                title: formatTitle(file.name),
+                url: file.download_url
+              }));
+          }
+        } catch (e) {
+          console.log('GitHub API not available, trying manifest...');
+        }
+      }
+
+      // Fallback to manifest file
+      try {
+        const response = await fetch(CONFIG.manifestFile);
+        if (response.ok) {
+          return await response.json();
+        }
+      } catch (e) {
+        console.log('Manifest not available');
+      }
+
+      return [];
+    }
+
+    // Format filename to title
+    function formatTitle(filename) {
+      return filename
+        .replace('.md', '')
+        .replace(/-overview$/, '')
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+
+    // Extract metadata from markdown content
+    function extractMetadata(content, filename) {
+      const lines = content.split('\n');
+      let title = formatTitle(filename);
+      let excerpt = '';
+      let category = 'General';
+
+      // Find first h1 for title
+      for (const line of lines) {
+        if (line.startsWith('# ')) {
+          title = line.replace('# ', '').replace(' - Technical Overview', '');
+          break;
+        }
+      }
+
+      // Find first paragraph for excerpt
+      let inParagraph = false;
+      for (const line of lines) {
+        if (line.startsWith('## ') && line.toLowerCase().includes('overview')) {
+          inParagraph = true;
+          continue;
+        }
+        if (inParagraph && line.trim() && !line.startsWith('#') && !line.startsWith('```')) {
+          excerpt = line.trim().substring(0, 200);
+          if (line.length > 200) excerpt += '...';
+          break;
+        }
+      }
+
+      // Extract category from frontmatter if present
+      // Supports: category: Tech or category: "My Category"
+      const frontmatterMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
+      if (frontmatterMatch) {
+        const frontmatter = frontmatterMatch[1];
+        const categoryMatch = frontmatter.match(/^category:\s*["']?([^"'\n]+)["']?\s*$/m);
+        if (categoryMatch) {
+          category = categoryMatch[1].trim();
+        }
+      }
+
+      return { title, excerpt, category };
+    }
+
+    // Fetch and parse a single post
+    async function fetchPost(post) {
+      try {
+        const url = post.url || post.path;
+        const response = await fetch(url);
+        if (response.ok) {
+          const content = await response.text();
+          const metadata = extractMetadata(content, post.name);
+          return {
+            ...post,
+            ...metadata,
+            content
+          };
+        }
+      } catch (e) {
+        console.error(`Failed to fetch post: ${post.name}`, e);
+      }
+      return null;
+    }
+
+    // Render post list (home page)
+    function renderPostList(filteredPosts = posts) {
+      const container = document.getElementById('post-list');
+
+      if (filteredPosts.length === 0) {
+        container.innerHTML = '<p class="no-posts">No posts found.</p>';
+        return;
+      }
+
+      container.innerHTML = filteredPosts.map(post => `
+        <article class="post-card">
+          <header class="post-header">
+            <span class="post-category">${post.category}</span>
+            <h2 class="post-title">
+              <a href="#${post.name}" data-post="${post.name}">${post.title}</a>
+            </h2>
+          </header>
+          <div class="post-excerpt">
+            <p>${post.excerpt || 'Click to read more...'}</p>
+          </div>
+          <footer class="post-footer">
+            <a href="#${post.name}" class="read-more" data-post="${post.name}">Read More &rarr;</a>
+          </footer>
+        </article>
+      `).join('');
+
+      // Add click handlers
+      container.querySelectorAll('[data-post]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const postName = e.target.dataset.post;
+          showPost(postName);
+        });
+      });
+    }
+
+    // Render single post
+    function renderPost(post) {
+      const container = document.getElementById('post-content');
+      const html = marked.parse(post.content);
+
+      container.innerHTML = `
+        <header class="single-post-header">
+          <span class="post-category">${post.category}</span>
+          <h1 class="single-post-title">${post.title}</h1>
+        </header>
+        <div class="single-post-content">
+          ${html}
+        </div>
+        <footer class="single-post-footer">
+          <a href="./" class="back-link">&larr; Back to all posts</a>
+        </footer>
+      `;
+
+      // Re-highlight code blocks
+      container.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+      });
+
+      // Handle mermaid diagrams
+      renderMermaidDiagrams();
+    }
+
+    // Render mermaid diagrams
+    async function renderMermaidDiagrams() {
+      const mermaidDivs = document.querySelectorAll('.mermaid');
+      if (mermaidDivs.length === 0) return;
+
+      // Load mermaid if not already loaded
+      if (!window.mermaid) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js';
+        script.onload = () => {
+          mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+          mermaid.run({ nodes: mermaidDivs });
+        };
+        document.head.appendChild(script);
+      } else {
+        mermaid.run({ nodes: mermaidDivs });
+      }
+    }
+
+    // Show post view
+    function showPost(postName) {
+      const post = posts.find(p => p.name === postName);
+      if (!post) return;
+
+      currentPost = post;
+      document.getElementById('post-list').style.display = 'none';
+      document.getElementById('post-content').style.display = 'block';
+      renderPost(post);
+      window.scrollTo(0, 0);
+      history.pushState(null, '', `#${postName}`);
+    }
+
+    // Show list view
+    function showList() {
+      currentPost = null;
+      document.getElementById('post-content').style.display = 'none';
+      document.getElementById('post-list').style.display = 'block';
+      history.pushState(null, '', './');
+    }
+
+    // Render sidebar
+    function renderSidebar() {
+      // Recent posts
+      const recentContainer = document.getElementById('recent-posts');
+      const recent = posts.slice(0, 5);
+      recentContainer.innerHTML = recent.map(post => `
+        <li><a href="#${post.name}" data-post="${post.name}">${post.title}</a></li>
+      `).join('');
+
+      recentContainer.querySelectorAll('[data-post]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          showPost(e.target.dataset.post);
+        });
+      });
+
+      // Categories
+      const categories = [...new Set(posts.map(p => p.category))];
+      const categoryContainer = document.getElementById('categories');
+      categoryContainer.innerHTML = categories.map(cat => {
+        const count = posts.filter(p => p.category === cat).length;
+        return `<li><a href="#" data-category="${cat}">${cat} (${count})</a></li>`;
+      }).join('');
+
+      categoryContainer.querySelectorAll('[data-category]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const category = e.target.dataset.category;
+          const filtered = posts.filter(p => p.category === category);
+          showList();
+          renderPostList(filtered);
+        });
+      });
+    }
+
+    // Search functionality
+    function setupSearch() {
+      const searchInput = document.getElementById('search-input');
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        if (!query) {
+          renderPostList(posts);
+          return;
+        }
+        const filtered = posts.filter(post =>
+          post.title.toLowerCase().includes(query) ||
+          post.excerpt.toLowerCase().includes(query) ||
+          post.category.toLowerCase().includes(query)
+        );
+        showList();
+        renderPostList(filtered);
+      });
+    }
+
+    // Handle navigation
+    function setupNavigation() {
+      // Home link
+      document.querySelector('.nav-home').addEventListener('click', (e) => {
+        e.preventDefault();
+        showList();
+        renderPostList(posts);
+        document.getElementById('search-input').value = '';
+      });
+
+      // Site title
+      document.querySelector('.site-title a').addEventListener('click', (e) => {
+        e.preventDefault();
+        showList();
+        renderPostList(posts);
+        document.getElementById('search-input').value = '';
+      });
+
+      // Mobile nav toggle
+      document.querySelector('.nav-toggle').addEventListener('click', () => {
+        document.querySelector('.nav-menu').classList.toggle('active');
+      });
+
+      // Handle browser back/forward
+      window.addEventListener('popstate', handleRouting);
+    }
+
+    // Handle URL routing
+    function handleRouting() {
+      const hash = window.location.hash.slice(1);
+      if (hash && posts.length > 0) {
+        const post = posts.find(p => p.name === hash);
+        if (post) {
+          showPost(hash);
+          return;
+        }
+      }
+      showList();
+    }
+
+    // Initialize
+    async function init() {
+      // Show loading state
+      document.getElementById('post-list').innerHTML = '<p class="loading">Loading posts...</p>';
+
+      // Fetch posts list
+      const postsList = await fetchPostsList();
+
+      // Fetch all posts content
+      const fetchedPosts = await Promise.all(postsList.map(fetchPost));
+      posts = fetchedPosts.filter(p => p !== null);
+
+      // Sort by title
+      posts.sort((a, b) => a.title.localeCompare(b.title));
+
+      // Render
+      renderPostList();
+      renderSidebar();
+      setupSearch();
+      setupNavigation();
+
+      // Handle initial routing
+      handleRouting();
+    }
+
+    init();
+  </script>
+</body>
+</html>
