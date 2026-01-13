@@ -186,7 +186,17 @@
       const lines = content.split('\n');
       let title = formatTitle(filename);
       let excerpt = '';
-      let category = 'General';
+      let category = 'Overview'; // Default category
+
+      // Auto-detect category from filename
+      const lowerFilename = filename.toLowerCase();
+      if (lowerFilename.includes('-earning-ideas')) {
+        category = 'Earning Ideas';
+      } else if (lowerFilename.includes('-analysis')) {
+        category = 'Analysis';
+      } else if (lowerFilename.includes('-overview')) {
+        category = 'Overview';
+      }
 
       // Find first h1 for title
       for (const line of lines) {
@@ -210,8 +220,7 @@
         }
       }
 
-      // Extract category from frontmatter if present
-      // Supports: category: Tech or category: "My Category"
+      // Override with frontmatter category if present
       const frontmatterMatch = content.match(/^---\s*\n([\s\S]*?)\n---/);
       if (frontmatterMatch) {
         const frontmatter = frontmatterMatch[1];
