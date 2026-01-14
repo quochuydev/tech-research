@@ -6,6 +6,7 @@
   { "name": "bloom-overview.md", "path": "researching/bloom-overview.md" },
   { "name": "c4-model-overview.md", "path": "researching/c4-model-overview.md" },
   { "name": "claude-code-web-overview.md", "path": "researching/claude-code-web-overview.md" },
+  { "name": "clerk-authentication-overview.md", "path": "researching/clerk-authentication-overview.md" },
   { "name": "deepwiki-earning-ideas.md", "path": "researching/deepwiki-earning-ideas.md" },
   { "name": "deepwiki-overview.md", "path": "researching/deepwiki-overview.md" },
   { "name": "design-os-overview.md", "path": "researching/design-os-overview.md" },
@@ -15,9 +16,12 @@
   { "name": "livekit-overview.md", "path": "researching/livekit-overview.md" },
   { "name": "loveable-overview.md", "path": "researching/loveable-overview.md" },
   { "name": "manus-promotion-analysis.md", "path": "researching/manus-promotion-analysis.md" },
+  { "name": "mediapipe-earning-ideas.md", "path": "researching/mediapipe-earning-ideas.md" },
+  { "name": "mediapipe-overview.md", "path": "researching/mediapipe-overview.md" },
   { "name": "moondream-overview.md", "path": "researching/moondream-overview.md" },
   { "name": "n8n-earning-ideas.md", "path": "researching/n8n-earning-ideas.md" },
   { "name": "n8n-overview.md", "path": "researching/n8n-overview.md" },
+  { "name": "n8n-supabase-stack-playbook.md", "path": "researching/n8n-supabase-stack-playbook.md" },
   { "name": "oauth2-proxy-overview.md", "path": "researching/oauth2-proxy-overview.md" },
   { "name": "opencode-antigravity-auth-analysis.md", "path": "researching/opencode-antigravity-auth-analysis.md" },
   { "name": "pdfme-overview.md", "path": "researching/pdfme-overview.md" },
@@ -25,6 +29,7 @@
   { "name": "research-socratic-superpowers.md", "path": "researching/research-socratic-superpowers.md" },
   { "name": "solana-earning-ideas.md", "path": "researching/solana-earning-ideas.md" },
   { "name": "solana-overview.md", "path": "researching/solana-overview.md" },
+  { "name": "ucp-overview.md", "path": "researching/ucp-overview.md" },
   { "name": "vibe-kanban-overview.md", "path": "researching/vibe-kanban-overview.md" },
   { "name": "zitadel-overview.md", "path": "researching/zitadel-overview.md" }
 ]
