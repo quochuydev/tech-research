@@ -1,0 +1,27 @@
+{
+  "name": "tech-research",
+  "version": "1.0.0",
+  "description": "A collection of technical research articles and overviews on various technologies, frameworks, and platforms. Articles are written in Markdown and rendered as a static blog via GitHub Pages.",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quochuydev/tech-research.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/quochuydev/tech-research/issues"
+  },
+  "homepage": "https://github.com/quochuydev/tech-research#readme",
+  "devDependencies": {
+    "mermaid": "^11.12.2",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}
