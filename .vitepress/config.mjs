@@ -12,6 +12,7 @@ function getSidebarItems() {
 
   const categories = {
     'Overview': [],
+    'Model Reports': [],
     'Earning Ideas': [],
     'Analysis': [],
     'Playbook': [],
@@ -26,6 +27,7 @@ function getSidebarItems() {
       .replace(/-promotion-analysis$/, '')
       .replace(/-analysis$/, '')
       .replace(/-playbook$/, '')
+      .replace(/-model-report$/, '')
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ')
@@ -34,6 +36,8 @@ function getSidebarItems() {
 
     if (file.includes('-earning-ideas')) {
       categories['Earning Ideas'].push(item)
+    } else if (file.includes('-model-report')) {
+      categories['Model Reports'].push(item)
     } else if (file.includes('-analysis')) {
       categories['Analysis'].push(item)
     } else if (file.includes('-playbook')) {
@@ -48,6 +52,9 @@ function getSidebarItems() {
   const sidebar = []
   if (categories['Overview'].length) {
     sidebar.push({ text: 'Technical Overviews', collapsed: false, items: categories['Overview'] })
+  }
+  if (categories['Model Reports'].length) {
+    sidebar.push({ text: 'Model Reports', collapsed: false, items: categories['Model Reports'] })
   }
   if (categories['Earning Ideas'].length) {
     sidebar.push({ text: 'Earning Ideas', collapsed: false, items: categories['Earning Ideas'] })
