@@ -77,8 +77,7 @@ export default withMermaid(
     title: 'Tech Research',
     description: 'Technical research, overviews, and earning opportunities',
 
-    // GitHub Pages base path
-    base: '/tech-research/',
+    base: '/',
 
     // Use researching folder as part of source
     srcDir: '.',
