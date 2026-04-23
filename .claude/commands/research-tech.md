@@ -55,6 +55,15 @@ Research and document: **$ARGUMENTS**
    - Save the document to `researching/<topic-slug>-overview.md`
    - Use kebab-case for the filename (e.g., `binance-smart-chain-overview.md`)
 
+6. **Update manifest.json (REQUIRED)**
+   After the markdown file is written, regenerate `manifest.json` by running the repo's script:
+
+   ```bash
+   bash update-manifest.sh
+   ```
+
+   Verify the new file appears in `manifest.json` before reporting the task complete.
+
 ## Example Reference
 
 See existing files in `researching/` directory for format examples:
